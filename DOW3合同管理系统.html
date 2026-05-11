@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOW3 合同管理系统</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root {
+  --bg: #0f1117;
+  --bg2: #161b27;
+  --bg3: #1e2535;
+  --bg4: #252d40;
+  --border: #2a3450;
+  --border2: #3a4a6a;
+  --accent: #4f8ef7;
+  --accent2: #6fa8ff;
+  --accent-soft: rgba(79,142,247,0.12);
+  --gold: #f0b429;
+  --gold-soft: rgba(240,180,41,0.12);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.12);
+  --red: #f87171;
+  --red-soft: rgba(248,113,113,0.12);
+  --purple: #a78bfa;
+  --purple-soft: rgba(167,139,250,0.12);
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #64748b;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --font: 'Noto Sans SC', sans-serif;
+  --mono: 'DM Mono', monospace;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 48px rgba(0,0,0,0.6);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+
+/* LAYOUT */
+.app{display:flex;height:100vh;overflow:hidden;}
+.sidebar{width:220px;min-width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+
+/* SIDEBAR */
+.sidebar-logo{padding:20px 16px 16px;border-bottom:1px solid var(--border);}
+.logo-tag{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:4px;}
+.logo-title{font-size:16px;font-weight:700;color:var(--text);}
+.logo-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+
+.nav-section{padding:12px 8px 4px;}
+.nav-label{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--text3);padding:0 8px;margin-bottom:6px;text-transform:uppercase;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:all .15s;color:var(--text2);font-size:13px;font-weight:500;margin-bottom:2px;position:relative;}
+.nav-item:hover{background:var(--bg3);color:var(--text);}
+.nav-item.active{background:var(--accent-soft);color:var(--accent);}
+.nav-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:60%;background:var(--accent);border-radius:0 2px 2px 0;}
+.nav-item i{width:16px;text-align:center;font-size:13px;}
+.nav-badge{margin-left:auto;background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;}
+
+.sidebar-bottom{margin-top:auto;padding:16px;border-top:1px solid var(--border);}
+.api-status{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text3);}
+.api-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.api-key-btn{width:100%;margin-top:8px;padding:7px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:11px;cursor:pointer;font-family:var(--font);transition:all .15s;display:flex;align-items:center;gap:6px;justify-content:center;}
+.api-key-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* TOPBAR */
+.topbar{height:56px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:16px;background:var(--bg2);flex-shrink:0;}
+.topbar-title{font-size:16px;font-weight:600;color:var(--text);}
+.topbar-sub{font-size:12px;color:var(--text3);margin-left:4px;}
+.topbar-actions{margin-left:auto;display:flex;gap:8px;align-items:center;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:var(--font);transition:all .15s;white-space:nowrap;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent2);}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border);}
+.btn-ghost:hover{background:var(--bg3);color:var(--text);border-color:var(--border2);}
+.btn-sm{padding:5px 10px;font-size:12px;}
+.btn-danger{background:var(--red-soft);color:var(--red);border:1px solid rgba(248,113,113,0.2);}
+.btn-danger:hover{background:rgba(248,113,113,0.2);}
+.btn-gold{background:var(--gold-soft);color:var(--gold);border:1px solid rgba(240,180,41,0.2);}
+.btn-gold:hover{background:rgba(240,180,41,0.2);}
+.btn-green{background:var(--green-soft);color:var(--green);border:1px solid rgba(52,211,153,0.2);}
+.btn-green:hover{background:rgba(52,211,153,0.2);}
+.btn-purple{background:var(--purple-soft);color:var(--purple);border:1px solid rgba(167,139,250,0.2);}
+.btn-purple:hover{background:rgba(167,139,250,0.2);}
+
+/* CONTENT AREA */
+.content{flex:1;overflow-y:auto;padding:24px;}
+
+/* PAGE PANELS */
+.page{display:none;}
+.page.active{display:block;}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px;}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.card-title{font-size:14px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px;}
+.card-title i{color:var(--accent);}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 20px;}
+.stat-label{font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;}
+.stat-value{font-size:26px;font-weight:700;color:var(--text);line-height:1;}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:4px;}
+.stat-card.accent{border-color:rgba(79,142,247,0.3);background:linear-gradient(135deg,rgba(79,142,247,0.08),var(--bg2));}
+.stat-card.gold{border-color:rgba(240,180,41,0.3);background:linear-gradient(135deg,rgba(240,180,41,0.08),var(--bg2));}
+.stat-card.green{border-color:rgba(52,211,153,0.3);background:linear-gradient(135deg,rgba(52,211,153,0.08),var(--bg2));}
+.stat-card.purple{border-color:rgba(167,139,250,0.3);background:linear-gradient(135deg,rgba(167,139,250,0.08),var(--bg2));}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{text-align:left;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);}
+td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg3);}
+.contract-name{font-weight:500;color:var(--text);display:flex;align-items:center;gap:8px;}
+.contract-name i{color:var(--text3);font-size:12px;}
+
+/* TAGS / BADGES */
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;}
+.tag-blue{background:var(--accent-soft);color:var(--accent);}
+.tag-gold{background:var(--gold-soft);color:var(--gold);}
+.tag-green{background:var(--green-soft);color:var(--green);}
+.tag-red{background:var(--red-soft);color:var(--red);}
+.tag-purple{background:var(--purple-soft);color:var(--purple);}
+.tag-gray{background:rgba(100,116,139,0.15);color:var(--text3);}
+
+/* SEARCH BAR */
+.search-bar{position:relative;flex:1;max-width:340px;}
+.search-bar input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px 8px 34px;color:var(--text);font-size:13px;font-family:var(--font);outline:none;transition:border .15s;}
+.search-bar input:focus{border-color:var(--accent);}
+.search-bar i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;}
+
+/* UPLOAD ZONE */
+.upload-zone{border:2px dashed var(--border2);border-radius:var(--radius-lg);padding:40px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg3);}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:var(--accent-soft);}
+.upload-icon{font-size:36px;color:var(--text3);margin-bottom:12px;}
+.upload-zone:hover .upload-icon,.upload-zone.drag .upload-icon{color:var(--accent);}
+.upload-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;}
+.upload-sub{font-size:12px;color:var(--text3);}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-lg);width:720px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);}
+.modal-header{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.modal-title{font-size:16px;font-weight:600;}
+.modal-close{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:4px;transition:color .15s;}
+.modal-close:hover{color:var(--text);}
+.modal-body{padding:20px 24px;overflow-y:auto;flex:1;}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0;}
+.modal-wide{width:900px;}
+
+/* FORM */
+.form-group{margin-bottom:16px;}
+.form-label{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;display:block;letter-spacing:.3px;}
+.form-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:var(--font);outline:none;transition:border .15s;}
+.form-input:focus{border-color:var(--accent);}
+.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+textarea.form-input{resize:vertical;min-height:80px;}
+
+/* AI PANEL */
+.ai-panel{background:linear-gradient(135deg,rgba(79,142,247,0.06),rgba(167,139,250,0.06));border:1px solid rgba(79,142,247,0.2);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px;}
+.ai-panel-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.ai-label{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--accent);text-transform:uppercase;background:var(--accent-soft);padding:2px 8px;border-radius:4px;}
+.ai-content{font-size:13px;color:var(--text2);line-height:1.8;}
+.ai-content h4{color:var(--text);font-weight:600;margin:12px 0 6px;font-size:13px;}
+.ai-content ul{padding-left:16px;}
+.ai-content li{margin-bottom:4px;}
+.ai-content .highlight{background:rgba(240,180,41,0.15);color:var(--gold);padding:1px 5px;border-radius:4px;font-weight:500;}
+.ai-content .risk{background:rgba(248,113,113,0.12);color:var(--red);padding:1px 5px;border-radius:4px;font-weight:500;}
+.ai-content .ok{background:rgba(52,211,153,0.12);color:var(--green);padding:1px 5px;border-radius:4px;font-weight:500;}
+
+/* LOADING SPINNER */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(79,142,247,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* VERSION TIMELINE */
+.version-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+.version-item:last-child{border-bottom:none;}
+.version-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:5px;}
+.version-dot.old{background:var(--text3);}
+.version-meta{font-size:11px;color:var(--text3);margin-top:2px;}
+.version-changes{font-size:12px;color:var(--text2);margin-top:6px;background:var(--bg3);padding:8px 10px;border-radius:6px;font-family:var(--mono);}
+
+/* PARTY GRID */
+.party-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.party-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:14px;cursor:pointer;transition:all .15s;}
+.party-card:hover,.party-card.selected{border-color:var(--accent);background:var(--accent-soft);}
+.party-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.party-type{font-size:11px;color:var(--text3);margin-bottom:8px;}
+.party-stats{display:flex;gap:8px;}
+.party-stat{font-size:11px;color:var(--text2);}
+.party-stat span{color:var(--accent);font-weight:700;}
+
+/* DIFF VIEWER */
+.diff-view{font-family:var(--mono);font-size:12px;line-height:1.7;background:var(--bg3);border-radius:8px;padding:12px;overflow-x:auto;}
+.diff-add{background:rgba(52,211,153,0.1);color:var(--green);}
+.diff-del{background:rgba(248,113,113,0.1);color:var(--red);text-decoration:line-through;}
+.diff-same{color:var(--text3);}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:48px 24px;color:var(--text3);}
+.empty-state i{font-size:40px;margin-bottom:16px;display:block;}
+.empty-state p{font-size:14px;color:var(--text2);margin-bottom:8px;}
+.empty-state small{font-size:12px;}
+
+/* NOTIFICATION */
+.notif{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:13px;box-shadow:var(--shadow);z-index:2000;transform:translateY(80px);opacity:0;transition:all .3s;max-width:320px;}
+.notif.show{transform:none;opacity:1;}
+.notif.success{border-color:rgba(52,211,153,0.4);}
+.notif.error{border-color:rgba(248,113,113,0.4);}
+.notif i{font-size:16px;}
+.notif.success i{color:var(--green);}
+.notif.error i{color:var(--red);}
+.notif.info i{color:var(--accent);}
+
+/* AI KEY MODAL */
+.key-input-wrap{position:relative;}
+.key-input-wrap input{padding-right:36px;font-family:var(--mono);font-size:12px;}
+.key-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;}
+
+/* TABS */
+.tabs{display:flex;gap:2px;background:var(--bg3);border-radius:8px;padding:3px;margin-bottom:16px;}
+.tab{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text3);transition:all .15s;}
+.tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,0.3);}
+
+/* PROGRESS */
+.progress-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--purple));transition:width .3s;}
+
+/* FILTER ROW */
+.filter-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-tag">DOW3 · EXF</div>
+      <div class="logo-title">合同管理系统</div>
+      <div class="logo-sub">Contract Management</div>
+    </div>
+    <div style="flex:1;overflow-y:auto;">
+      <div class="nav-section">
+        <div class="nav-label">主菜单</div>
+        <div class="nav-item active" onclick="showPage('dashboard')"><i class="fa fa-chart-pie"></i> 总览看板</div>
+        <div class="nav-item" onclick="showPage('contracts')"><i class="fa fa-file-contract"></i> 合同列表 <span class="nav-badge" id="contract-badge">0</span></div>
+        <div class="nav-item" onclick="showPage('parties')"><i class="fa fa-building"></i> 资方管理</div>
+        <div class="nav-item" onclick="showPage('versions')"><i class="fa fa-code-branch"></i> 版本历史</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">AI 工具</div>
+        <div class="nav-item" onclick="showPage('ai-analyze')"><i class="fa fa-brain"></i> 合同分析</div>
+        <div class="nav-item" onclick="showPage('ai-translate')"><i class="fa fa-language"></i> 翻译工具</div>
+        <div class="nav-item" onclick="showPage('ai-format')"><i class="fa fa-spell-check"></i> 格式检查</div>
+      </div>
+    </div>
+    <div class="sidebar-bottom">
+      <div class="api-status"><div class="api-dot"></div><span id="api-status-text">AI 服务未配置</span></div>
+      <button class="api-key-btn" onclick="openApiModal()"><i class="fa fa-key"></i> 配置 API Key</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div>
+        <span class="topbar-title" id="page-title">总览看板</span>
+        <span class="topbar-sub" id="page-sub"></span>
+      </div>
+      <div class="topbar-actions" id="topbar-actions">
+        <button class="btn btn-primary" onclick="openUploadModal()"><i class="fa fa-plus"></i> 上传合同</button>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- ========== DASHBOARD ========== -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-row">
+          <div class="stat-card accent">
+            <div class="stat-label">合同总数</div>
+            <div class="stat-value" id="stat-total">0</div>
+            <div class="stat-sub">DOW3 第一期 EXF</div>
+          </div>
+          <div class="stat-card gold">
+            <div class="stat-label">签约主体</div>
+            <div class="stat-value" id="stat-parties">0</div>
+            <div class="stat-sub">乙方资方</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-label">已分析</div>
+            <div class="stat-value" id="stat-analyzed">0</div>
+            <div class="stat-sub">AI 分析完成</div>
+          </div>
+          <div class="stat-card purple">
+            <div class="stat-label">待审核</div>
+            <div class="stat-value" id="stat-pending">0</div>
+            <div class="stat-sub">法务待审</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i class="fa fa-clock-rotate-left"></i> 最近合同</div>
+              <button class="btn btn-ghost btn-sm" onclick="showPage('contracts')">查看全部</button>
+            </div>
+            <div id="recent-contracts">
+              <div class="empty-state"><i class="fa fa-file-circle-plus"></i><p>还没有合同</p><small>点击右上角上传合同开始使用</small></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i class="fa fa-building-columns"></i> 资方概览</div>
+              <button class="btn btn-ghost btn-sm" onclick="showPage('parties')">管理资方</button>
+            </div>
+            <div id="party-overview">
+              <div class="empty-state"><i class="fa fa-users"></i><p>还没有资方</p><small>上传合同时添加签约主体</small></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== CONTRACTS ========== -->
+      <div class="page" id="page-contracts">
+        <div class="filter-row">
+          <div class="search-bar"><i class="fa fa-search"></i><input type="text" placeholder="搜索合同名称、资方..." oninput="filterContracts(this.value)" id="contract-search"></div>
+          <select class="form-input form-select" style="width:140px;" onchange="filterByParty(this.value)" id="party-filter">
+            <option value="">全部资方</option>
+          </select>
+          <select class="form-input form-select" style="width:120px;" onchange="filterByStatus(this.value)">
+            <option value="">全部状态</option>
+            <option value="active">生效中</option>
+            <option value="pending">审核中</option>
+            <option value="expired">已到期</option>
+          </select>
+          <button class="btn btn-primary" onclick="openUploadModal()" style="margin-left:auto;"><i class="fa fa-plus"></i> 上传合同</button>
+        </div>
+        <div class="card" style="padding:0;">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>合同名称</th>
+                  <th>签约主体 / 资方</th>
+                  <th>合同类型</th>
+                  <th>签署日期</th>
+                  <th>状态</th>
+                  <th>版本</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="contract-table-body">
+                <tr><td colspan="7"><div class="empty-state"><i class="fa fa-file-circle-plus"></i><p>暂无合同，点击上传开始使用</p></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== PARTIES ========== -->
+      <div class="page" id="page-parties">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div class="search-bar"><i class="fa fa-search"></i><input type="text" placeholder="搜索资方..." oninput="filterParties(this.value)"></div>
+          <button class="btn btn-primary" onclick="openPartyModal()"><i class="fa fa-plus"></i> 添加资方</button>
+        </div>
+        <div class="party-grid" id="party-grid">
+          <div style="grid-column:1/-1;"><div class="empty-state"><i class="fa fa-building"></i><p>还没有资方信息</p><small>添加资方后可快速查看其关联合同</small></div></div>
+        </div>
+        <div id="party-contracts-section" style="display:none;margin-top:20px;">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i class="fa fa-file-contract"></i> <span id="party-contracts-title">资方合同</span></div>
+              <button class="btn btn-ghost btn-sm" onclick="document.getElementById('party-contracts-section').style.display='none';document.querySelectorAll('.party-card').forEach(c=>c.classList.remove('selected'))">关闭</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>合同名称</th><th>类型</th><th>签署日期</th><th>状态</th><th>操作</th></tr></thead>
+                <tbody id="party-contracts-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== VERSIONS ========== -->
+      <div class="page" id="page-versions">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa fa-code-branch"></i> 版本历史记录</div>
+          </div>
+          <div style="margin-bottom:16px;">
+            <select class="form-input form-select" style="max-width:360px;" onchange="loadVersions(this.value)" id="version-contract-select">
+              <option value="">请选择合同查看版本记录</option>
+            </select>
+          </div>
+          <div id="version-timeline">
+            <div class="empty-state"><i class="fa fa-code-branch"></i><p>选择合同查看版本历史</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== AI ANALYZE ========== -->
+      <div class="page" id="page-ai-analyze">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa fa-brain"></i> AI 合同分析</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">选择合同</label>
+            <select class="form-input form-select" id="analyze-contract-select" onchange="preloadContractText(this.value)">
+              <option value="">请选择要分析的合同</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">分析重点（可自定义补充）</label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+              <button class="btn btn-ghost btn-sm" onclick="addAnalysisPoint('付款条款')"><i class="fa fa-plus"></i> 付款条款</button>
+              <button class="btn btn-ghost btn-sm" onclick="addAnalysisPoint('违约责任')"><i class="fa fa-plus"></i> 违约责任</button>
+              <button class="btn btn-ghost btn-sm" onclick="addAnalysisPoint('保密条款')"><i class="fa fa-plus"></i> 保密条款</button>
+              <button class="btn btn-ghost btn-sm" onclick="addAnalysisPoint('知识产权')"><i class="fa fa-plus"></i> 知识产权</button>
+              <button class="btn btn-ghost btn-sm" onclick="addAnalysisPoint('争议解决')"><i class="fa fa-plus"></i> 争议解决</button>
+            </div>
+            <textarea class="form-input" id="analyze-focus" rows="2" placeholder="例如：重点关注付款条款、违约责任、保密义务..."></textarea>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-primary" onclick="runAnalysis()"><i class="fa fa-brain"></i> 开始分析</button>
+            <button class="btn btn-gold" onclick="runAnalysis('legal')"><i class="fa fa-gavel"></i> 法务审核模式</button>
+          </div>
+        </div>
+        <div id="analysis-result"></div>
+      </div>
+
+      <!-- ========== AI TRANSLATE ========== -->
+      <div class="page" id="page-ai-translate">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa fa-language"></i> AI 翻译工具</div>
+          </div>
+          <div class="form-row" style="margin-bottom:12px;">
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">源语言</label>
+              <select class="form-input form-select" id="from-lang">
+                <option value="中文">中文</option>
+                <option value="英文">英文</option>
+                <option value="印尼语">印尼语（Bahasa）</option>
+                <option value="日语">日语</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">目标语言</label>
+              <select class="form-input form-select" id="to-lang">
+                <option value="英文">英文</option>
+                <option value="中文">中文</option>
+                <option value="印尼语">印尼语（Bahasa）</option>
+                <option value="日语">日语</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">或直接选择合同翻译全文</label>
+            <select class="form-input form-select" id="translate-contract-select" onchange="preloadTranslateText(this.value)">
+              <option value="">手动输入文本</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">原文</label>
+              <textarea class="form-input" id="translate-input" rows="8" placeholder="粘贴或输入需要翻译的合同内容..."></textarea>
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">译文 <span id="translate-status" style="font-size:11px;color:var(--text3);font-weight:400;"></span></label>
+              <textarea class="form-input" id="translate-output" rows="8" placeholder="翻译结果将显示在这里..." readonly></textarea>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px;">
+            <button class="btn btn-primary" onclick="runTranslation()"><i class="fa fa-language"></i> 开始翻译</button>
+            <button class="btn btn-ghost" onclick="copyTranslation()"><i class="fa fa-copy"></i> 复制译文</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== AI FORMAT ========== -->
+      <div class="page" id="page-ai-format">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa fa-spell-check"></i> 格式检查</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">选择合同</label>
+            <select class="form-input form-select" id="format-contract-select" onchange="preloadFormatText(this.value)">
+              <option value="">请选择合同</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">或粘贴合同文本</label>
+            <textarea class="form-input" id="format-input" rows="7" placeholder="粘贴合同内容进行格式检查..."></textarea>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-primary" onclick="runFormatCheck()"><i class="fa fa-spell-check"></i> 检查格式</button>
+            <button class="btn btn-ghost" onclick="runFormatFix()"><i class="fa fa-wand-magic-sparkles"></i> AI 修正建议</button>
+          </div>
+        </div>
+        <div id="format-result"></div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ========== UPLOAD MODAL ========== -->
+<div class="modal-overlay" id="upload-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa fa-upload" style="color:var(--accent);margin-right:8px;"></i>上传合同</div>
+      <button class="modal-close" onclick="closeModal('upload-modal')"><i class="fa fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()" ondragover="e=>{e.preventDefault();this.classList.add('drag')}" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)">
+        <div class="upload-icon"><i class="fa fa-file-arrow-up"></i></div>
+        <div class="upload-title">点击或拖拽上传合同</div>
+        <div class="upload-sub">支持 Word (.docx) 和 PDF 文件</div>
+      </div>
+      <input type="file" id="file-input" accept=".docx,.pdf" style="display:none;" onchange="handleFileSelect(event)">
+      <div id="file-preview" style="margin-top:12px;display:none;">
+        <div style="display:flex;align-items:center;gap:10px;background:var(--bg3);padding:10px 14px;border-radius:8px;">
+          <i class="fa fa-file-word" style="color:var(--accent);font-size:20px;"></i>
+          <div><div id="file-name" style="font-weight:500;font-size:13px;"></div><div id="file-size" style="font-size:11px;color:var(--text3);"></div></div>
+          <button class="btn btn-ghost btn-sm" style="margin-left:auto;" onclick="clearFile()"><i class="fa fa-times"></i></button>
+        </div>
+      </div>
+      <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">合同名称 <span style="color:var(--red);">*</span></label>
+          <input type="text" class="form-input" id="contract-name" placeholder="例：DOW3-EXF-001 投资协议">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">合同类型</label>
+          <select class="form-input form-select" id="contract-type">
+            <option>投资协议</option>
+            <option>框架合同</option>
+            <option>补充协议</option>
+            <option>保密协议</option>
+            <option>服务协议</option>
+            <option>其他</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">签约主体 / 资方</label>
+          <select class="form-input form-select" id="contract-party">
+            <option value="">请选择（或新建）</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">新建资方名称（选填）</label>
+          <input type="text" class="form-input" id="new-party-name" placeholder="若资方不在列表中可直接输入">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">签署日期</label>
+          <input type="date" class="form-input" id="contract-date">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">合同状态</label>
+          <select class="form-input form-select" id="contract-status">
+            <option value="active">生效中</option>
+            <option value="pending">审核中</option>
+            <option value="expired">已到期</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:12px;">
+        <label class="form-label">备注说明</label>
+        <textarea class="form-input" id="contract-note" rows="2" placeholder="合同背景、注意事项等..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">修改说明（版本备注）</label>
+        <input type="text" class="form-input" id="contract-version-note" placeholder="例：初始版本 / 修改了付款条款">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('upload-modal')">取消</button>
+      <button class="btn btn-primary" onclick="saveContract()"><i class="fa fa-check"></i> 保存合同</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== CONTRACT DETAIL MODAL ========== -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <div class="modal-title" id="detail-title">合同详情</div>
+      <button class="modal-close" onclick="closeModal('detail-modal')"><i class="fa fa-times"></i></button>
+    </div>
+    <div class="modal-body" id="detail-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('detail-modal')">关闭</button>
+      <button class="btn btn-gold" id="detail-analyze-btn"><i class="fa fa-brain"></i> AI 分析</button>
+      <button class="btn btn-primary" id="detail-version-btn"><i class="fa fa-upload"></i> 上传新版本</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== PARTY MODAL ========== -->
+<div class="modal-overlay" id="party-modal">
+  <div class="modal" style="width:460px;">
+    <div class="modal-header">
+      <div class="modal-title">添加 / 编辑资方</div>
+      <button class="modal-close" onclick="closeModal('party-modal')"><i class="fa fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">资方名称 <span style="color:var(--red);">*</span></label>
+        <input type="text" class="form-input" id="party-name-input" placeholder="例：XX 投资有限公司">
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">资方类型</label>
+          <select class="form-input form-select" id="party-type-input">
+            <option>股权投资方</option>
+            <option>债权资方</option>
+            <option>战略合作方</option>
+            <option>政府机构</option>
+            <option>其他</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">资金状态</label>
+          <select class="form-input form-select" id="party-fund-status">
+            <option value="normal">正常</option>
+            <option value="pending">待确认</option>
+            <option value="overdue">逾期</option>
+            <option value="completed">已完成</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">投资/合作金额（万元，选填）</label>
+        <input type="number" class="form-input" id="party-amount" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">联系人 & 备注</label>
+        <textarea class="form-input" id="party-note" rows="2" placeholder="联系人姓名、资金情况说明等..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('party-modal')">取消</button>
+      <button class="btn btn-primary" onclick="saveParty()"><i class="fa fa-check"></i> 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== API KEY MODAL ========== -->
+<div class="modal-overlay" id="api-modal">
+  <div class="modal" style="width:460px;">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa fa-key" style="color:var(--gold);margin-right:8px;"></i>配置 Claude API Key</div>
+      <button class="modal-close" onclick="closeModal('api-modal')"><i class="fa fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="ai-panel" style="margin-bottom:16px;">
+        <div class="ai-content" style="font-size:12px;">
+          AI 分析、翻译、格式检查功能需要 Claude API Key。<br>
+          前往 <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent);">console.anthropic.com</a> 获取，Key 仅存储在本地浏览器中。
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">API Key</label>
+        <div class="key-input-wrap">
+          <input type="password" class="form-input" id="api-key-input" placeholder="sk-ant-...">
+          <button class="key-toggle" onclick="toggleKeyVis()"><i class="fa fa-eye" id="key-eye"></i></button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('api-modal')">取消</button>
+      <button class="btn btn-primary" onclick="saveApiKey()"><i class="fa fa-check"></i> 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW VERSION MODAL -->
+<div class="modal-overlay" id="version-modal">
+  <div class="modal" style="width:500px;">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa fa-code-branch" style="color:var(--accent);margin-right:8px;"></i>上传新版本</div>
+      <button class="modal-close" onclick="closeModal('version-modal')"><i class="fa fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="upload-zone" onclick="document.getElementById('version-file-input').click()">
+        <div class="upload-icon"><i class="fa fa-file-arrow-up"></i></div>
+        <div class="upload-title">上传新版本文件</div>
+        <div class="upload-sub">支持 .docx / .pdf</div>
+      </div>
+      <input type="file" id="version-file-input" accept=".docx,.pdf" style="display:none;" onchange="handleVersionFile(event)">
+      <div id="version-file-preview" style="margin-top:10px;"></div>
+      <div class="form-group" style="margin-top:12px;">
+        <label class="form-label">版本说明 <span style="color:var(--red);">*</span></label>
+        <input type="text" class="form-input" id="version-note-input" placeholder="例：修改了第3条付款条款、调整了违约金比例">
+      </div>
+      <div class="form-group">
+        <label class="form-label">修改人</label>
+        <input type="text" class="form-input" id="version-author" placeholder="例：李明">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('version-modal')">取消</button>
+      <button class="btn btn-primary" onclick="saveNewVersion()"><i class="fa fa-check"></i> 保存版本</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif">
+  <i class="fa fa-circle-check" id="notif-icon"></i>
+  <span id="notif-text"></span>
+</div>
+
+<script>
+// ============================================================
+// DATA STORE
+// ============================================================
+let contracts = JSON.parse(localStorage.getItem('dow3_contracts') || '[]');
+let parties = JSON.parse(localStorage.getItem('dow3_parties') || '[]');
+let versions = JSON.parse(localStorage.getItem('dow3_versions') || '{}');
+let apiKey = localStorage.getItem('dow3_apikey') || '';
+let currentFile = null;
+let currentContractId = null;
+let versionFile = null;
+let filterPartyId = '';
+let filterStatus = '';
+let filterSearch = '';
+
+function save() {
+  localStorage.setItem('dow3_contracts', JSON.stringify(contracts));
+  localStorage.setItem('dow3_parties', JSON.stringify(parties));
+  localStorage.setItem('dow3_versions', JSON.stringify(versions));
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+const pageTitles = {
+  'dashboard': ['总览看板', 'DOW3 · EXF 第一期'],
+  'contracts': ['合同列表', ''],
+  'parties': ['资方管理', ''],
+  'versions': ['版本历史', ''],
+  'ai-analyze': ['AI 合同分析', ''],
+  'ai-translate': ['AI 翻译工具', ''],
+  'ai-format': ['格式检查', ''],
+};
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelector(`.nav-item[onclick="showPage('${id}')"]`).classList.add('active');
+  const [title, sub] = pageTitles[id] || [id, ''];
+  document.getElementById('page-title').textContent = title;
+  document.getElementById('page-sub').textContent = sub;
+  if (id === 'contracts') renderContractTable();
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'parties') renderParties();
+  if (id === 'versions') populateVersionSelect();
+  if (id === 'ai-analyze') populateAnalyzeSelect();
+  if (id === 'ai-translate') populateTranslateSelect();
+  if (id === 'ai-format') populateFormatSelect();
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard() {
+  document.getElementById('stat-total').textContent = contracts.length;
+  document.getElementById('stat-parties').textContent = parties.length;
+  document.getElementById('stat-analyzed').textContent = contracts.filter(c => c.analyzed).length;
+  document.getElementById('stat-pending').textContent = contracts.filter(c => c.status === 'pending').length;
+  document.getElementById('contract-badge').textContent = contracts.length;
+
+  const recent = contracts.slice(-5).reverse();
+  const rc = document.getElementById('recent-contracts');
+  if (!recent.length) { rc.innerHTML = '<div class="empty-state"><i class="fa fa-file-circle-plus"></i><p>还没有合同</p></div>'; return; }
+  rc.innerHTML = recent.map(c => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="openDetail('${c.id}')">
+      <i class="fa fa-file-contract" style="color:var(--accent);font-size:14px;"></i>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.name}</div>
+        <div style="font-size:11px;color:var(--text3);">${c.party || '未分配'} · ${c.date || '未填写日期'}</div>
+      </div>
+      <span class="tag ${statusTag(c.status)}">${statusLabel(c.status)}</span>
+    </div>`).join('');
+
+  const po = document.getElementById('party-overview');
+  if (!parties.length) { po.innerHTML = '<div class="empty-state"><i class="fa fa-users"></i><p>还没有资方</p></div>'; return; }
+  po.innerHTML = parties.slice(0, 6).map(p => {
+    const count = contracts.filter(c => c.partyId === p.id).length;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+      <div style="width:32px;height:32px;border-radius:8px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:13px;font-weight:700;">${p.name[0]}</div>
+      <div style="flex:1;"><div style="font-size:13px;font-weight:500;">${p.name}</div><div style="font-size:11px;color:var(--text3);">${p.type} · ${count} 份合同</div></div>
+      <span class="tag ${fundTag(p.fundStatus)}">${fundLabel(p.fundStatus)}</span>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// CONTRACTS
+// ============================================================
+function statusTag(s) { return {active:'tag-green',pending:'tag-gold',expired:'tag-red'}[s]||'tag-gray'; }
+function statusLabel(s) { return {active:'生效中',pending:'审核中',expired:'已到期'}[s]||s; }
+function fundTag(s) { return {normal:'tag-green',pending:'tag-gold',overdue:'tag-red',completed:'tag-blue'}[s]||'tag-gray'; }
+function fundLabel(s) { return {normal:'资金正常',pending:'待确认',overdue:'逾期',completed:'已完成'}[s]||s; }
+
+function renderContractTable() {
+  let list = contracts;
+  if (filterPartyId) list = list.filter(c => c.partyId === filterPartyId);
+  if (filterStatus) list = list.filter(c => c.status === filterStatus);
+  if (filterSearch) list = list.filter(c => (c.name + c.party).toLowerCase().includes(filterSearch.toLowerCase()));
+  const tbody = document.getElementById('contract-table-body');
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fa fa-file-circle-plus"></i><p>暂无合同</p></div></td></tr>'; return; }
+  tbody.innerHTML = list.map(c => {
+    const vList = versions[c.id] || [];
+    return `<tr>
+      <td><div class="contract-name"><i class="fa fa-file-word"></i>${c.name}</div></td>
+      <td><span style="color:var(--text2);">${c.party || '<span style="color:var(--text3);">未分配</span>'}</span></td>
+      <td><span class="tag tag-blue">${c.type}</span></td>
+      <td style="color:var(--text3);font-size:12px;">${c.date || '—'}</td>
+      <td><span class="tag ${statusTag(c.status)}">${statusLabel(c.status)}</span></td>
+      <td><span style="font-family:var(--mono);font-size:11px;color:var(--text3);">v${vList.length}</span></td>
+      <td>
+        <div style="display:flex;gap:4px;">
+          <button class="btn btn-ghost btn-sm" onclick="openDetail('${c.id}')"><i class="fa fa-eye"></i></button>
+          <button class="btn btn-gold btn-sm" onclick="goAnalyze('${c.id}')"><i class="fa fa-brain"></i></button>
+          <button class="btn btn-danger btn-sm" onclick="deleteContract('${c.id}')"><i class="fa fa-trash"></i></button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterContracts(v) { filterSearch = v; renderContractTable(); }
+function filterByParty(v) { filterPartyId = v; renderContractTable(); }
+function filterByStatus(v) { filterStatus = v; renderContractTable(); }
+
+function deleteContract(id) {
+  if (!confirm('确认删除该合同？')) return;
+  contracts = contracts.filter(c => c.id !== id);
+  delete versions[id];
+  save(); renderContractTable(); renderDashboard();
+  notify('合同已删除', 'success');
+}
+
+// ============================================================
+// UPLOAD & SAVE CONTRACT
+// ============================================================
+function openUploadModal() {
+  document.getElementById('contract-date').value = new Date().toISOString().split('T')[0];
+  populatePartySelect('contract-party');
+  openModal('upload-modal');
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f) loadFile(f);
+}
+function handleFileSelect(e) { if (e.target.files[0]) loadFile(e.target.files[0]); }
+function loadFile(f) {
+  currentFile = f;
+  document.getElementById('file-name').textContent = f.name;
+  document.getElementById('file-size').textContent = (f.size/1024).toFixed(1) + ' KB';
+  document.getElementById('file-preview').style.display = 'block';
+  if (!document.getElementById('contract-name').value) {
+    document.getElementById('contract-name').value = f.name.replace(/\.(docx|pdf)$/i, '');
+  }
+}
+function clearFile() { currentFile = null; document.getElementById('file-preview').style.display='none'; document.getElementById('file-input').value=''; }
+
+async function extractText(file) {
+  return new Promise(async (resolve) => {
+    if (file.name.endsWith('.pdf')) {
+      try {
+        const ab = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({data: ab}).promise;
+        let text = '';
+        for (let i = 1; i <= Math.min(pdf.numPages, 30); i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          text += content.items.map(s => s.str).join(' ') + '\n';
+        }
+        resolve(text.slice(0, 8000));
+      } catch { resolve(''); }
+    } else {
+      try {
+        const ab = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({arrayBuffer: ab});
+        resolve(result.value.slice(0, 8000));
+      } catch { resolve(''); }
+    }
+  });
+}
+
+async function saveContract() {
+  const name = document.getElementById('contract-name').value.trim();
+  if (!name) { notify('请填写合同名称', 'error'); return; }
+  let partyId = document.getElementById('contract-party').value;
+  let partyName = '';
+  const newPartyName = document.getElementById('new-party-name').value.trim();
+  if (newPartyName) {
+    const np = { id: uid(), name: newPartyName, type: '其他', fundStatus: 'normal', amount: '', note: '' };
+    parties.push(np); partyId = np.id; partyName = np.name;
+  } else if (partyId) {
+    partyName = (parties.find(p => p.id === partyId) || {}).name || '';
+  }
+  let text = '';
+  if (currentFile) text = await extractText(currentFile);
+  const id = uid();
+  const contract = {
+    id, name,
+    type: document.getElementById('contract-type').value,
+    partyId, party: partyName,
+    date: document.getElementById('contract-date').value,
+    status: document.getElementById('contract-status').value,
+    note: document.getElementById('contract-note').value,
+    text, analyzed: false,
+    createdAt: new Date().toISOString()
+  };
+  contracts.push(contract);
+  const vNote = document.getElementById('contract-version-note').value || '初始版本';
+  versions[id] = [{ ver: 1, note: vNote, date: new Date().toLocaleString('zh-CN'), author: '系统', text }];
+  save();
+  closeModal('upload-modal');
+  clearFile();
+  document.getElementById('contract-name').value = '';
+  document.getElementById('new-party-name').value = '';
+  document.getElementById('contract-version-note').value = '';
+  renderDashboard(); renderContractTable();
+  notify('合同已保存！', 'success');
+  populateAllSelects();
+}
+
+// ============================================================
+// CONTRACT DETAIL
+// ============================================================
+function openDetail(id) {
+  currentContractId = id;
+  const c = contracts.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('detail-title').textContent = c.name;
+  const vList = versions[id] || [];
+  document.getElementById('detail-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div style="background:var(--bg3);border-radius:8px;padding:12px;">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">签约主体</div>
+        <div style="font-size:13px;font-weight:600;">${c.party || '未分配'}</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:8px;padding:12px;">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">合同类型</div>
+        <div style="font-size:13px;font-weight:600;">${c.type}</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:8px;padding:12px;">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">状态</div>
+        <span class="tag ${statusTag(c.status)}">${statusLabel(c.status)}</span>
+      </div>
+    </div>
+    ${c.note ? `<div class="card" style="margin-bottom:12px;"><div class="card-title" style="margin-bottom:6px;font-size:12px;"><i class="fa fa-note-sticky"></i> 备注</div><div style="font-size:13px;color:var(--text2);">${c.note}</div></div>` : ''}
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-title" style="margin-bottom:10px;font-size:12px;"><i class="fa fa-code-branch"></i> 版本记录（共 ${vList.length} 版）</div>
+      ${vList.slice().reverse().map((v, i) => `
+        <div class="version-item">
+          <div class="version-dot ${i > 0 ? 'old' : ''}"></div>
+          <div>
+            <div style="font-size:13px;font-weight:500;">v${v.ver} ${i === 0 ? '<span class="tag tag-green" style="margin-left:4px;">最新</span>' : ''}</div>
+            <div class="version-meta">${v.date} ${v.author ? '· ' + v.author : ''}</div>
+            <div class="version-changes">${v.note}</div>
+          </div>
+        </div>`).join('')}
+    </div>
+    ${c.text ? `<div class="card"><div class="card-title" style="margin-bottom:8px;font-size:12px;"><i class="fa fa-align-left"></i> 合同内容预览</div><div style="font-size:12px;color:var(--text3);line-height:1.8;max-height:200px;overflow-y:auto;white-space:pre-wrap;">${c.text.slice(0,1000)}${c.text.length > 1000 ? '...' : ''}</div></div>` : ''}
+  `;
+  document.getElementById('detail-analyze-btn').onclick = () => { closeModal('detail-modal'); goAnalyze(id); };
+  document.getElementById('detail-version-btn').onclick = () => { closeModal('detail-modal'); openVersionModal(id); };
+  openModal('detail-modal');
+}
+
+// ============================================================
+// VERSION MANAGEMENT
+// ============================================================
+function openVersionModal(id) {
+  currentContractId = id;
+  document.getElementById('version-file-preview').innerHTML = '';
+  document.getElementById('version-note-input').value = '';
+  document.getElementById('version-author').value = '';
+  versionFile = null;
+  openModal('version-modal');
+}
+function handleVersionFile(e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  versionFile = f;
+  document.getElementById('version-file-preview').innerHTML = `<div style="display:flex;align-items:center;gap:8px;background:var(--bg3);padding:8px 12px;border-radius:8px;"><i class="fa fa-file-word" style="color:var(--accent);"></i><span style="font-size:13px;">${f.name}</span></div>`;
+}
+async function saveNewVersion() {
+  const note = document.getElementById('version-note-input').value.trim();
+  if (!note) { notify('请填写版本说明', 'error'); return; }
+  const id = currentContractId;
+  if (!versions[id]) versions[id] = [];
+  let text = '';
+  if (versionFile) text = await extractText(versionFile);
+  const ver = versions[id].length + 1;
+  const author = document.getElementById('version-author').value.trim() || '未知';
+  versions[id].push({ ver, note, date: new Date().toLocaleString('zh-CN'), author, text });
+  if (text) { const c = contracts.find(x => x.id === id); if (c) c.text = text; }
+  save();
+  closeModal('version-modal');
+  notify(`v${ver} 已保存！`, 'success');
+}
+function populateVersionSelect() {
+  const sel = document.getElementById('version-contract-select');
+  sel.innerHTML = '<option value="">请选择合同查看版本记录</option>' + contracts.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+}
+function loadVersions(id) {
+  const vList = versions[id] || [];
+  const el = document.getElementById('version-timeline');
+  if (!id) { el.innerHTML = '<div class="empty-state"><i class="fa fa-code-branch"></i><p>选择合同查看版本历史</p></div>'; return; }
+  if (!vList.length) { el.innerHTML = '<div class="empty-state"><i class="fa fa-circle-info"></i><p>暂无版本记录</p></div>'; return; }
+  el.innerHTML = vList.slice().reverse().map((v, i) => `
+    <div class="version-item">
+      <div class="version-dot ${i > 0 ? 'old' : ''}"></div>
+      <div style="flex:1;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
+          <span style="font-weight:600;font-size:13px;">版本 v${v.ver}</span>
+          ${i === 0 ? '<span class="tag tag-green">当前版本</span>' : ''}
+        </div>
+        <div class="version-meta">${v.date} · ${v.author}</div>
+        <div class="version-changes">${v.note}</div>
+        ${v.text ? `<button class="btn btn-ghost btn-sm" style="margin-top:6px;" onclick="showVersionText(this,'${btoa(encodeURIComponent(v.text.slice(0,500)))}')"><i class="fa fa-eye"></i> 预览内容</button>` : ''}
+      </div>
+    </div>`).join('');
+}
+function showVersionText(btn, enc) {
+  const text = decodeURIComponent(atob(enc));
+  const next = btn.nextElementSibling;
+  if (next && next.classList.contains('diff-view')) { next.remove(); btn.innerHTML = '<i class="fa fa-eye"></i> 预览内容'; return; }
+  const div = document.createElement('div');
+  div.className = 'diff-view'; div.style.marginTop = '8px';
+  div.textContent = text + (text.length >= 500 ? '...' : '');
+  btn.after(div); btn.innerHTML = '<i class="fa fa-eye-slash"></i> 收起';
+}
+
+// ============================================================
+// PARTIES
+// ============================================================
+function renderParties(search = '') {
+  const grid = document.getElementById('party-grid');
+  let list = parties;
+  if (search) list = list.filter(p => p.name.includes(search));
+  if (!list.length) { grid.innerHTML = '<div style="grid-column:1/-1;"><div class="empty-state"><i class="fa fa-building"></i><p>还没有资方信息</p><small>上传合同时可快速添加</small></div></div>'; return; }
+  grid.innerHTML = list.map(p => {
+    const count = contracts.filter(c => c.partyId === p.id).length;
+    return `<div class="party-card" onclick="showPartyContracts('${p.id}')">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:16px;font-weight:700;">${p.name[0]}</div>
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();editParty('${p.id}')"><i class="fa fa-pen"></i></button>
+      </div>
+      <div class="party-name">${p.name}</div>
+      <div class="party-type">${p.type}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:12px;color:var(--text2);"><i class="fa fa-file-contract" style="margin-right:4px;color:var(--text3);"></i>${count} 份合同</div>
+        <span class="tag ${fundTag(p.fundStatus)}">${fundLabel(p.fundStatus)}</span>
+      </div>
+      ${p.amount ? `<div style="font-size:11px;color:var(--text3);margin-top:6px;">金额：${p.amount} 万元</div>` : ''}
+    </div>`;
+  }).join('');
+  populatePartyFilter();
+}
+function filterParties(v) { renderParties(v); }
+function showPartyContracts(partyId) {
+  document.querySelectorAll('.party-card').forEach(c => c.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  const p = parties.find(x => x.id === partyId);
+  const list = contracts.filter(c => c.partyId === partyId);
+  document.getElementById('party-contracts-title').textContent = `${p.name} · 关联合同（${list.length} 份）`;
+  const tbody = document.getElementById('party-contracts-body');
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px;">该资方暂无关联合同</td></tr>'; }
+  else tbody.innerHTML = list.map(c => `<tr>
+    <td><div class="contract-name"><i class="fa fa-file-contract"></i>${c.name}</div></td>
+    <td><span class="tag tag-blue">${c.type}</span></td>
+    <td style="font-size:12px;color:var(--text3);">${c.date || '—'}</td>
+    <td><span class="tag ${statusTag(c.status)}">${statusLabel(c.status)}</span></td>
+    <td><button class="btn btn-ghost btn-sm" onclick="openDetail('${c.id}')"><i class="fa fa-eye"></i> 查看</button></td>
+  </tr>`).join('');
+  document.getElementById('party-contracts-section').style.display = 'block';
+}
+
+function openPartyModal(id) {
+  if (id) {
+    const p = parties.find(x => x.id === id);
+    document.getElementById('party-name-input').value = p.name;
+    document.getElementById('party-type-input').value = p.type;
+    document.getElementById('party-fund-status').value = p.fundStatus;
+    document.getElementById('party-amount').value = p.amount || '';
+    document.getElementById('party-note').value = p.note || '';
+    document.getElementById('party-modal').dataset.editId = id;
+  } else {
+    document.getElementById('party-name-input').value = '';
+    document.getElementById('party-type-input').value = '股权投资方';
+    document.getElementById('party-fund-status').value = 'normal';
+    document.getElementById('party-amount').value = '';
+    document.getElementById('party-note').value = '';
+    delete document.getElementById('party-modal').dataset.editId;
+  }
+  openModal('party-modal');
+}
+function editParty(id) { openPartyModal(id); }
+function saveParty() {
+  const name = document.getElementById('party-name-input').value.trim();
+  if (!name) { notify('请填写资方名称', 'error'); return; }
+  const editId = document.getElementById('party-modal').dataset.editId;
+  const data = { name, type: document.getElementById('party-type-input').value, fundStatus: document.getElementById('party-fund-status').value, amount: document.getElementById('party-amount').value, note: document.getElementById('party-note').value };
+  if (editId) { Object.assign(parties.find(p => p.id === editId), data); }
+  else { parties.push({ id: uid(), ...data }); }
+  save(); closeModal('party-modal'); renderParties(); renderDashboard();
+  notify('资方信息已保存', 'success'); populateAllSelects();
+}
+
+// ============================================================
+// AI FUNCTIONS
+// ============================================================
+async function callClaude(prompt, onStream) {
+  if (!apiKey) { notify('请先配置 API Key', 'error'); openApiModal(); return null; }
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 2000, messages: [{ role: 'user', content: prompt }] })
+    });
+    if (!res.ok) { const e = await res.json(); notify('API 错误: ' + (e.error?.message || res.status), 'error'); return null; }
+    const data = await res.json();
+    return data.content[0].text;
+  } catch (e) { notify('网络错误，请检查 API Key', 'error'); return null; }
+}
+
+// -- ANALYZE
+function goAnalyze(id) {
+  showPage('ai-analyze');
+  setTimeout(() => {
+    document.getElementById('analyze-contract-select').value = id;
+  }, 50);
+}
+function populateAnalyzeSelect() { populateSelect('analyze-contract-select'); }
+function addAnalysisPoint(p) {
+  const el = document.getElementById('analyze-focus');
+  el.value = el.value ? el.value + '、' + p : p;
+}
+function preloadContractText() {}
+
+async function runAnalysis(mode) {
+  const id = document.getElementById('analyze-contract-select').value;
+  if (!id) { notify('请选择合同', 'error'); return; }
+  const c = contracts.find(x => x.id === id);
+  const focus = document.getElementById('analyze-focus').value;
+  if (!c.text) { notify('该合同无可分析文本（未能提取内容）', 'error'); return; }
+  const resultEl = document.getElementById('analysis-result');
+  resultEl.innerHTML = `<div class="ai-panel"><div class="ai-panel-header"><div class="spinner"></div><span style="font-size:13px;color:var(--text2);">AI 正在分析中，请稍候...</span></div></div>`;
+  const isLegal = mode === 'legal';
+  const prompt = isLegal
+    ? `你是一位资深法务律师。请对以下合同进行专业法律审查，输出格式为：
+1. 关键条款摘要（列点）
+2. 潜在法律风险（标注严重程度：高/中/低）
+3. 建议修改事项
+4. 整体评估意见
+${focus ? '重点关注：' + focus : ''}
+
+合同内容：
+${c.text.slice(0, 4000)}`
+    : `你是合同分析专家。请分析以下合同，用中文输出：
+1. 合同主要内容摘要（3-5点）
+2. 核心重点条款（如付款、违约、期限等）
+3. 需要注意的风险点
+4. 对业务人员的建议
+${focus ? '重点关注：' + focus : ''}
+
+合同内容：
+${c.text.slice(0, 4000)}`;
+  const result = await callClaude(prompt);
+  if (!result) { resultEl.innerHTML = ''; return; }
+  c.analyzed = true; save();
+  resultEl.innerHTML = `<div class="ai-panel">
+    <div class="ai-panel-header">
+      <span class="ai-label">${isLegal ? '⚖️ 法务审核' : '🤖 AI 分析'}</span>
+      <span style="font-size:11px;color:var(--text3);margin-left:auto;">${c.name}</span>
+    </div>
+    <div class="ai-content">${formatAIText(result)}</div>
+  </div>`;
+  renderDashboard();
+}
+
+// -- TRANSLATE
+function populateTranslateSelect() { populateSelect('translate-contract-select', '手动输入文本'); }
+function preloadTranslateText(id) {
+  const c = contracts.find(x => x.id === id);
+  if (c && c.text) document.getElementById('translate-input').value = c.text.slice(0, 2000);
+}
+async function runTranslation() {
+  const input = document.getElementById('translate-input').value.trim();
+  if (!input) { notify('请输入要翻译的内容', 'error'); return; }
+  const from = document.getElementById('from-lang').value;
+  const to = document.getElementById('to-lang').value;
+  document.getElementById('translate-status').textContent = '翻译中...';
+  document.getElementById('translate-output').value = '';
+  const prompt = `请将以下${from}合同内容翻译成${to}，保持专业法律用语，保留格式结构：\n\n${input}`;
+  const result = await callClaude(prompt);
+  document.getElementById('translate-status').textContent = '';
+  if (result) { document.getElementById('translate-output').value = result; notify('翻译完成', 'success'); }
+}
+function copyTranslation() {
+  const t = document.getElementById('translate-output').value;
+  if (!t) { notify('没有可复制的内容', 'error'); return; }
+  navigator.clipboard.writeText(t).then(() => notify('已复制到剪贴板', 'success'));
+}
+
+// -- FORMAT CHECK
+function populateFormatSelect() { populateSelect('format-contract-select'); }
+function preloadFormatText(id) {
+  const c = contracts.find(x => x.id === id);
+  if (c && c.text) document.getElementById('format-input').value = c.text.slice(0, 3000);
+}
+async function runFormatCheck() {
+  const input = document.getElementById('format-input').value.trim();
+  if (!input) { notify('请输入或选择合同内容', 'error'); return; }
+  document.getElementById('format-result').innerHTML = `<div class="ai-panel"><div class="ai-panel-header"><div class="spinner"></div><span style="font-size:13px;color:var(--text2);">正在检查格式...</span></div></div>`;
+  const prompt = `请检查以下合同文本的格式问题，包括：
+1. 编号/条款顺序是否完整
+2. 大小写/标点符号使用
+3. 空白/缩进问题
+4. 缺失的必要条款（如签署栏、日期等）
+5. 表述不清晰的地方
+每个问题请标注位置并给出修改建议：\n\n${input}`;
+  const result = await callClaude(prompt);
+  if (!result) { document.getElementById('format-result').innerHTML = ''; return; }
+  document.getElementById('format-result').innerHTML = `<div class="ai-panel"><div class="ai-panel-header"><span class="ai-label">📋 格式检查报告</span></div><div class="ai-content">${formatAIText(result)}</div></div>`;
+}
+async function runFormatFix() {
+  const input = document.getElementById('format-input').value.trim();
+  if (!input) { notify('请输入合同内容', 'error'); return; }
+  document.getElementById('format-result').innerHTML = `<div class="ai-panel"><div class="ai-panel-header"><div class="spinner"></div><span style="font-size:13px;color:var(--text2);">AI 修正中...</span></div></div>`;
+  const prompt = `请对以下合同文本进行格式修正和优化，修正标点、编号、表述等问题，输出修正后的完整文本，并在最后列出主要修改说明：\n\n${input}`;
+  const result = await callClaude(prompt);
+  if (!result) { document.getElementById('format-result').innerHTML = ''; return; }
+  document.getElementById('format-result').innerHTML = `<div class="ai-panel"><div class="ai-panel-header"><span class="ai-label">✨ AI 修正结果</span></div><div class="ai-content">${formatAIText(result)}</div></div>`;
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function formatAIText(text) {
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^#{1,3} (.+)$/gm, '<h4>$1</h4>')
+    .replace(/^(\d+)\. /gm, '<br><strong>$1.</strong> ')
+    .replace(/^[-•] /gm, '<br>• ')
+    .replace(/\n/g, '<br>')
+    .replace(/【高风险】|⚠️高/g, '<span class="risk">高风险</span>')
+    .replace(/【中风险】|⚠️中/g, '<span class="highlight">中风险</span>')
+    .replace(/【低风险】|✅/g, '<span class="ok">低风险</span>');
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function notify(msg, type = 'info') {
+  const el = document.getElementById('notif');
+  const icons = { success: 'fa-circle-check', error: 'fa-circle-exclamation', info: 'fa-circle-info' };
+  document.getElementById('notif-icon').className = 'fa ' + icons[type];
+  document.getElementById('notif-text').textContent = msg;
+  el.className = 'notif ' + type + ' show';
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+function populateSelect(selId, placeholder) {
+  const sel = document.getElementById(selId);
+  if (!sel) return;
+  sel.innerHTML = `<option value="">${placeholder || '请选择合同'}</option>` + contracts.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+}
+function populatePartySelect(selId) {
+  const sel = document.getElementById(selId);
+  if (!sel) return;
+  sel.innerHTML = '<option value="">请选择（或在下方新建）</option>' + parties.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+}
+function populatePartyFilter() {
+  const sel = document.getElementById('party-filter');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">全部资方</option>' + parties.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+}
+function populateAllSelects() {
+  populateSelect('analyze-contract-select');
+  populateSelect('translate-contract-select', '手动输入文本');
+  populateSelect('format-contract-select');
+  populateSelect('version-contract-select', '请选择合同查看版本记录');
+  populatePartyFilter();
+}
+function openApiModal() {
+  document.getElementById('api-key-input').value = apiKey;
+  openModal('api-modal');
+}
+function saveApiKey() {
+  apiKey = document.getElementById('api-key-input').value.trim();
+  localStorage.setItem('dow3_apikey', apiKey);
+  closeModal('api-modal');
+  document.getElementById('api-status-text').textContent = apiKey ? 'AI 服务已配置' : 'AI 服务未配置';
+  notify(apiKey ? 'API Key 已保存' : 'API Key 已清除', 'success');
+}
+function toggleKeyVis() {
+  const inp = document.getElementById('api-key-input');
+  const eye = document.getElementById('key-eye');
+  if (inp.type === 'password') { inp.type = 'text'; eye.className = 'fa fa-eye-slash'; }
+  else { inp.type = 'password'; eye.className = 'fa fa-eye'; }
+}
+
+// INIT
+document.getElementById('api-status-text').textContent = apiKey ? 'AI 服务已配置' : 'AI 服务未配置';
+renderDashboard();
+populateAllSelects();
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
